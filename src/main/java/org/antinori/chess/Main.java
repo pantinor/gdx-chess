@@ -4,9 +4,13 @@ package org.antinori.chess;
 import net.sourceforge.frittle.Frittle;
 import net.sourceforge.frittle.Game;
 import net.sourceforge.frittle.GameState;
+import net.sourceforge.frittle.Move;
+import net.sourceforge.frittle.MoveList;
 import net.sourceforge.frittle.Moves;
+import net.sourceforge.frittle.PieceType;
+import net.sourceforge.frittle.Player;
 import net.sourceforge.frittle.ai.AI;
-import net.sourceforge.frittle.ui.CommunicationProtocol;
+import net.sourceforge.frittle.ai.Eval;
 import net.sourceforge.frittle.ui.XBoard;
 
 import com.badlogic.gdx.Gdx;
@@ -16,7 +20,6 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -28,7 +31,6 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.Plane;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
@@ -39,24 +41,26 @@ public class Main extends SimpleGame {
 	public Environment environment;
 	
 	public PerspectiveCamera cam;
+	
 	public static final float CAMERA_HEIGHT = 30f;
-	public static final Vector3 startCamerPosition = new Vector3(-10f, CAMERA_HEIGHT, 20f);
-
-	private Vector3 cameraPosition = startCamerPosition;
+	
+	public static final Vector3 startCameraPosition = new Vector3(-10f, CAMERA_HEIGHT, 20f);
+	public static final Vector3 leftCameraPosition = new Vector3(20f, 20f, -10f);
+	public static final Vector3 rightCameraPosition = new Vector3(20f, 20f, 50f);
+	
+	private Vector3 cameraPosition = startCameraPosition;
+	
+	private float lightPosition = 0;
+	private Vector3 lightCenter = new Vector3(20f, 20f, 20f);
+	private float radiusA = 13f;
+	private float radiusB = 13f;
+	private ModelInstance circlingLight;
 	
 	public Board board;
 	
-	public static Texture ROCK_TEXTURE;
-	
-	//properties for selecting cube with mouse clicks
-	public static final Plane xzPlane = new Plane(new Vector3(0, 1, 0), 0);
-	public static final Vector3 intersection = new Vector3();
-	
-	final Vector3 curr = new Vector3();
-	final Vector3 last = new Vector3(-1, -1, -1);
-	final Vector3 delta = new Vector3();
 	Cube lastSelectedTile = null;
-
+	MoveList moveList = null;
+	
 	
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -72,7 +76,7 @@ public class Main extends SimpleGame {
 	@Override
 	public void init() {
 		environment = new Environment();
-		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1f));
+		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.5f, 0.5f, 0.5f, 1f));
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 
 		modelBatch = new ModelBatch();
@@ -85,11 +89,14 @@ public class Main extends SimpleGame {
 		cam.far = 300f;
 		cam.update();
 		
-		ROCK_TEXTURE = new Texture(Gdx.files.classpath("data/rock.png"), true);
-
 		board = new Board();
 		
-		//createAxes();
+		
+//		ModelBuilder modelBuilder = new ModelBuilder();
+//		Model sphere = modelBuilder.createSphere(2f, 2f, 2f, 20, 20, new Material(), Usage.Position | Usage.Normal | Usage.TextureCoordinates);
+//		circlingLight = new ModelInstance(sphere);
+//		
+//		createAxes();
 		
 		
 		// Create new game and restart AI engine
@@ -110,6 +117,16 @@ public class Main extends SimpleGame {
 
 		modelBatch.begin(cam);
 		
+		
+//		lightPosition += delta * 1.0f;
+//		float lx = (float) (radiusA * Math.cos(lightPosition));
+//		float ly = (float) (radiusB * Math.sin(lightPosition));
+//		Vector3 lightVector = new Vector3(lx, 0, ly).add(lightCenter);
+//		circlingLight.transform.setToTranslation(lightVector);
+//		
+//		modelBatch.render(circlingLight, environment);
+		
+		
 		Cube[][] cubes = board.getCubes();
 		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
 			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
@@ -121,14 +138,8 @@ public class Main extends SimpleGame {
 			}
 		}
 		
-		Piece[][] pieces = board.getPieces();
-		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
-			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
-				Piece piece = pieces[i][j];
-				if (piece != null) {
-					modelBatch.render(piece.instance, environment);
-				}
-			}
+		for (Piece p : board.getPieces()) {
+			modelBatch.render(p.getInstance(), environment);			
 		}
 		
         //modelBatch.render(axesInstance);
@@ -145,39 +156,109 @@ public class Main extends SimpleGame {
 		Ray pickRay = cam.getPickRay(Gdx.input.getX(), Gdx.input.getY());
 		
 		Cube[][] cubes = board.getCubes();
+		
+		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
+			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
+				cubes[i][j].resetColor();;
+			}
+		}
+				
 		outer: for (int i = 0; i < Board.BOARD_WIDTH; i++) {
 			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
 				Cube cube = cubes[i][j];
-				if (cube != null) {
-					if (Intersector.intersectRayBoundsFast(pickRay, cube.getBoundingBox())) {
-						if (lastSelectedTile != null) {
-							lastSelectedTile.changeColor(false);
-						}
-						lastSelectedTile = cube;
-						lastSelectedTile.changeColor(true);
-						break outer;
+				if (Intersector.intersectRayBoundsFast(pickRay, cube.getBoundingBox())) {
+					lastSelectedTile = cube;
+					lastSelectedTile.highlight();
+					break outer;
+				}
+			}
+		}
+		
+		String coord = lastSelectedTile.getCoordinate();
+		
+		Player active = Frittle.getGame().getCurrentState().getActivePlayer().opponent();
+		
+		if (active == Player.WHITE) {
+			if (moveList != null) moveList.clear();
+			return false;
+		}
+			
+		//check if last selected tile is in the move destination
+		boolean moved = false;
+		if (moveList != null && !moveList.isEmpty()) {
+			for (Move m : moveList) {
+				if (m.toString().endsWith(coord)) {
+					if (move(m)) {
+						moved = true;
+						moveList.clear();
+						break;
 					}
 				}
 			}
 		}
 		
-		printBoard();
+        
+		if (!moved) {
+	        moveList = Frittle.getGame().getLegalMoves();
+			if (!moveList.isEmpty()) {
+				for (Move move : moveList) {
+					if (move.toString().startsWith(coord)) {
+						Cube c = board.getCube(Moves.toCoOrdinate(move.dest));
+						c.changeColor(Color.GREEN);
+					}
+				}
+			}	
+		}
+		
+		//printBoard();
+		movePiecesToCurrentGameState();
+		
+        Frittle.write("Evaluation: "+(float)Eval.evaluate(Frittle.getGame().getCurrentState())/100);
+
 		
 		return false;
 	}
 	
+	public boolean move(Move move) {
+		boolean moved = false;
+		if (Frittle.getGame().doMove(move.toString())) {
+			if (Frittle.getAI().forceMode == false && Frittle.getGame().isGameOver() == false) {
+				Frittle.getAI().go();
+				moved = true;
+			}
+		}
+		return moved;
+	}
+	
 	@Override
 	public boolean keyDown (int keycode) {
-		
+				
 		if (keycode == Input.Keys.NUM_1) {
-			cam.position.set(startCamerPosition);
+			cam.position.set(startCameraPosition);
+			cam.lookAt(20f, 5f, 20f);
+			return false;
+		}
+		
+		if (keycode == Input.Keys.NUM_2) {
+			cam.position.set(leftCameraPosition);
+			cam.lookAt(20f, 5f, 20f);
+			return false;
+		}
+		
+		if (keycode == Input.Keys.NUM_3) {
+			cam.position.set(rightCameraPosition);
+			cam.lookAt(20f, 5f, 20f);
 			return false;
 		}
 
-		if (keycode == Input.Keys.RIGHT) cameraPosition.z += 1f;
-		if (keycode == Input.Keys.UP) cameraPosition.x += 1f;
-		if (keycode == Input.Keys.LEFT) cameraPosition.z -= 1f;
-		if (keycode == Input.Keys.DOWN) cameraPosition.x -= 1f;
+		if (keycode == Input.Keys.RIGHT) 
+			cameraPosition.z += 1f;
+		if (keycode == Input.Keys.UP) 
+			cameraPosition.x += 1f;
+		if (keycode == Input.Keys.LEFT) 
+			cameraPosition.z -= 1f;
+		if (keycode == Input.Keys.DOWN) 
+			cameraPosition.x -= 1f;
 
 		cam.position.set(cameraPosition);
 
@@ -191,14 +272,10 @@ public class Main extends SimpleGame {
 		float scrollFactor = -0.1f;
 		cam.translate(new Vector3(cam.direction).scl(amount * scrollFactor * 10f));
 		cameraPosition = cam.position;
-		System.out.println(cameraPosition);
+		//System.out.println(cameraPosition);
 		return false;
 	}
 	
-//	@Override
-//	public boolean touchDragged (int screenX, int screenY, int pointer) {
-//		
-//	}
 	
 	
 	final float GRID_MIN = -40f;
@@ -230,8 +307,7 @@ public class Main extends SimpleGame {
 	}
     
 	/**
-	 * Prints an ASCII equivalent of the current state of the board to standard
-	 * output. Generated by the "bd" command.
+	 * Prints an ASCII equivalent of the current state of the board to standard output.
 	 */
 	private void printBoard() {
 		StringBuffer line;
@@ -252,6 +328,41 @@ public class Main extends SimpleGame {
 		Frittle.write(" | a b c d e f g h");
 		Frittle.write("  " + state.getActivePlayer().toString() + " TO MOVE");
 	}
+	
+	private void movePiecesToCurrentGameState() {
+		
+		for (Piece p: board.getPieces()) {
+			p.setPlaced(false);
+		}
+		
+		GameState state = Frittle.getGame().getCurrentState();
+		for (byte r = 8; r > 0; r--) {
+			for (char f = 'a'; f != 'i'; f++) {
+				byte i = Moves.toIndex(f, r);
+				if (state.getBoard()[i] != null) {
+					PieceType pt = state.getBoard()[i].getType();
+					Player pl = state.getBoard()[i].getPlayer();
+					
+					Piece piece = board.getPiece(pt, pl);
+					piece.setPlaced(true);
+					
+					String coord = "" + f + r;
+					Cube cube = board.getCube(coord);
+					piece.setPos(cube.getPos());
+				}
+			}
+		}
+		
+		//now place any captured pieces on the side
+		for (Piece p : board.getPieces()) {
+			if (!p.isPlaced()) {
+				p.setPos(new Vector3(5f, 3f, -5f));
+			}
+		}
+
+	}
+	
+	
 
 
 }

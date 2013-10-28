@@ -13,6 +13,8 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Cube {
+	
+	public static final char[] INDEX = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
 
 	private int block_x;
 	private int block_y;
@@ -79,6 +81,10 @@ public class Cube {
 	public int getBlock_y() {
 		return block_y;
 	}
+	
+	public String getCoordinate() {
+		return "" + INDEX[block_y] + "" + (block_x+1);
+	}
 
 	public Model getModel() {
 		return model;
@@ -137,12 +143,16 @@ public class Cube {
 	}
 
 
-	public void changeColor(boolean flag) {
-		if (flag) {
-			this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.RED));
-		} else {
-			this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));		
-		}
+	public void resetColor() {
+		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));		
+	}
+	
+	public void highlight() {
+		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.RED));
+	}
+	
+	public void changeColor(Color color) {
+		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));
 	}
 	
 	public boolean isInRegion(int dx, int dz) {
