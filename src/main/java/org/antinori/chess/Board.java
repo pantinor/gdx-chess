@@ -48,6 +48,9 @@ public class Board {
 	public static Model queenModel;
 	public static Model kingModel;
 	
+	List<TrayPosition> whiteTray = new ArrayList<TrayPosition>();
+	List<TrayPosition> blackTray = new ArrayList<TrayPosition>();
+
 	//public static final Texture darkTexture = new Texture(Gdx.files.classpath("data/wooddark0.jpg"), Format.RGB565, true);
 	//public static final Texture lightTexture = new Texture(Gdx.files.classpath("data/woodlight0.jpg"), Format.RGB565, true);
 	
@@ -134,6 +137,38 @@ public class Board {
 		pieces.add(new Piece(PieceType.KNIGHT, Player.BLACK, knightBlackModel, 	new Vector3(7*5+2.5f, MODEL_HEIGHT, 6*5 +2.5f)));
 		pieces.add(new Piece(PieceType.ROOK, Player.BLACK, rookModel, 		new Vector3(7*5+2.5f, MODEL_HEIGHT, 7*5 +2.5f)));	
 		
+		
+		float factor1 = 2.5f;
+		float factor2 = -7.5f;
+		float factor3 = 45f;
+		
+		//set tray positions
+		for (int c = 0; c < 8; c++) {
+			whiteTray.add(new TrayPosition(PieceType.PAWN, Player.WHITE, new Vector3(factor1*c, MODEL_HEIGHT, factor2 + 2.5f)));
+			blackTray.add(new TrayPosition(PieceType.PAWN, Player.BLACK, new Vector3(factor1*c, MODEL_HEIGHT, factor3 - 2.5f)));
+		}
+		
+		whiteTray.add(new TrayPosition(PieceType.ROOK, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.ROOK, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.KNIGHT, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.KNIGHT, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.BISHOP, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.BISHOP, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.QUEEN, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		whiteTray.add(new TrayPosition(PieceType.KING, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
+		
+		factor1 = 2.5f;
+		
+		blackTray.add(new TrayPosition(PieceType.ROOK, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.ROOK, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.KNIGHT, Player.BLACK,	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.KNIGHT, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.BISHOP, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.BISHOP, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.QUEEN, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+		blackTray.add(new TrayPosition(PieceType.KING, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
+
+		
 	}
 
 	public Cube[][] getCubes() {
@@ -182,7 +217,33 @@ public class Board {
 			return Gdx.files.classpath(fileName);
 		}
 	}
-
+	
+	public void reset() {
+		for (Piece p: getPieces()) {
+			p.setPlaced(false);
+		}
+		
+		for (TrayPosition tp : whiteTray) {
+			tp.setTaken(false);
+		}
+		
+		for (TrayPosition tp : blackTray) {
+			tp.setTaken(false);
+		}
+	}
+	
+	
+	public void placeInTray(Piece p) {
+		
+		List<TrayPosition> tray = (p.getPlayer() == Player.WHITE?whiteTray:blackTray);
+		for (TrayPosition tp : tray) {
+			if (p.getType() == tp.getType() && !tp.isTaken()) {
+				tp.setTaken(true);
+				p.setPos(tp.getPosition());
+			}
+		}
+		
+	}
 
 	
 	

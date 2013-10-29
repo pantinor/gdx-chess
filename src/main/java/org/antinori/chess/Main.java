@@ -60,7 +60,7 @@ public class Main extends SimpleGame {
 	
 	Cube lastSelectedTile = null;
 	MoveList moveList = null;
-	
+	String lastSelectedPieceCoord;
 	
 	public static void main(String[] args) {
 		LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
@@ -111,6 +111,9 @@ public class Main extends SimpleGame {
 	public void draw(float delta) {
 		
 		cam.update();
+		
+		movePiecesToCurrentGameState();
+
 
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
@@ -143,6 +146,8 @@ public class Main extends SimpleGame {
 		}
 		
         //modelBatch.render(axesInstance);
+		
+
 
 		modelBatch.end();
 		
@@ -159,9 +164,11 @@ public class Main extends SimpleGame {
 		
 		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
 			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
-				cubes[i][j].resetColor();;
+				cubes[i][j].resetColor();
 			}
 		}
+		
+		lastSelectedTile = null;
 				
 		outer: for (int i = 0; i < Board.BOARD_WIDTH; i++) {
 			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
@@ -174,23 +181,28 @@ public class Main extends SimpleGame {
 			}
 		}
 		
-		String coord = lastSelectedTile.getCoordinate();
+		if (lastSelectedTile == null) 
+			return false;
 		
-		Player active = Frittle.getGame().getCurrentState().getActivePlayer().opponent();
 		
-		if (active == Player.WHITE) {
+		Player active = Frittle.getGame().getCurrentState().getActivePlayer();
+		if (active == Player.BLACK) {
 			if (moveList != null) moveList.clear();
 			return false;
 		}
+		
+		String coord = lastSelectedTile.getCoordinate();
 			
 		//check if last selected tile is in the move destination
 		boolean moved = false;
-		if (moveList != null && !moveList.isEmpty()) {
+		if (moveList != null && !moveList.isEmpty() && lastSelectedPieceCoord != null) {
 			for (Move m : moveList) {
-				if (m.toString().endsWith(coord)) {
+				if (m.toString().endsWith(coord) && m.toString().startsWith(lastSelectedPieceCoord)) {
+					System.out.println("Move: " + m.toString());
 					if (move(m)) {
 						moved = true;
 						moveList.clear();
+						lastSelectedPieceCoord = null;
 						break;
 					}
 				}
@@ -199,6 +211,7 @@ public class Main extends SimpleGame {
 		
         
 		if (!moved) {
+			lastSelectedPieceCoord = coord;
 	        moveList = Frittle.getGame().getLegalMoves();
 			if (!moveList.isEmpty()) {
 				for (Move move : moveList) {
@@ -211,9 +224,8 @@ public class Main extends SimpleGame {
 		}
 		
 		//printBoard();
-		movePiecesToCurrentGameState();
 		
-        Frittle.write("Evaluation: "+(float)Eval.evaluate(Frittle.getGame().getCurrentState())/100);
+        //Frittle.write("Evaluation: "+(float)Eval.evaluate(Frittle.getGame().getCurrentState())/100);
 
 		
 		return false;
@@ -331,9 +343,7 @@ public class Main extends SimpleGame {
 	
 	private void movePiecesToCurrentGameState() {
 		
-		for (Piece p: board.getPieces()) {
-			p.setPlaced(false);
-		}
+		board.reset();
 		
 		GameState state = Frittle.getGame().getCurrentState();
 		for (byte r = 8; r > 0; r--) {
@@ -356,7 +366,7 @@ public class Main extends SimpleGame {
 		//now place any captured pieces on the side
 		for (Piece p : board.getPieces()) {
 			if (!p.isPlaced()) {
-				p.setPos(new Vector3(5f, 3f, -5f));
+				board.placeInTray(p);
 			}
 		}
 
