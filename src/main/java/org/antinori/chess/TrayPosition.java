@@ -1,8 +1,5 @@
 package org.antinori.chess;
 
-import net.sourceforge.frittle.PieceType;
-import net.sourceforge.frittle.Player;
-
 import com.badlogic.gdx.math.Vector3;
 
 public class TrayPosition {

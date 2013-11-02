@@ -14,22 +14,18 @@ import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Cube {
 	
-	public static final char[] INDEX = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
-
-	private int block_x;
-	private int block_y;
 	private Model model;
 	private ModelInstance instance;
 	private BoundingBox boundingBox;
 	private Vector3 pos;
+	private String coord;
 	private Color color; 
 	//for debugging
 	private ModelInstance outline;
 
-	public Cube(ModelBuilder modelBuilder, Color color, Vector3 pos, int x, int y) {
+	public Cube(ModelBuilder modelBuilder, Color color, Vector3 pos, String coord) {
 		
-		this.block_x = x;
-		this.block_y = y;
+		this.coord = coord;
 		this.pos = pos;
 		this.color = color;
 		
@@ -74,16 +70,9 @@ public class Cube {
 		return new ModelInstance(model);
 	}
 
-	public int getBlock_x() {
-		return block_x;
-	}
-
-	public int getBlock_y() {
-		return block_y;
-	}
 	
 	public String getCoordinate() {
-		return "" + INDEX[block_y] + "" + (block_x+1);
+		return coord;
 	}
 
 	public Model getModel() {
@@ -96,14 +85,6 @@ public class Cube {
 
 	public Vector3 getPos() {
 		return pos;
-	}
-
-	public void setBlock_x(int block_x) {
-		this.block_x = block_x;
-	}
-
-	public void setBlock_y(int block_y) {
-		this.block_y = block_y;
 	}
 
 	public void setModel(Model model) {
@@ -155,20 +136,6 @@ public class Cube {
 		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));
 	}
 	
-	public boolean isInRegion(int dx, int dz) {
-		
-		int a = block_x*5+5;
-		int b = block_y*5+5;
-		
-		System.out.println("dx:"+dx+" dz:"+dz+ " a:"+a+" b:"+b);
-		
-		boolean within = false;
-		if (dx <= a && dz <= b) {
-			within = true;
-		}
-		
-		return within;
-	}
 	
 	@Override
 	public boolean equals(Object obj) {
@@ -176,7 +143,7 @@ public class Cube {
 			return false;
 		
 		Cube tmp = (Cube)obj;
-		if (tmp.block_x == this.block_x && tmp.block_y == this.block_y) 
+		if (tmp.coord == this.coord) 
 			return true;
 		
 		return false;

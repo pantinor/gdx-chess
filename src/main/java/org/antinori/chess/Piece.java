@@ -1,8 +1,5 @@
 package org.antinori.chess;
 
-import net.sourceforge.frittle.PieceType;
-import net.sourceforge.frittle.Player;
-
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
@@ -39,7 +36,7 @@ public class Piece {
 
 	@Override
 	public String toString() {
-		return String.format("%s %s", type, player);
+		return String.format("%s %s %s", type, player, placed);
 	}
 
 	public PieceType getType() {

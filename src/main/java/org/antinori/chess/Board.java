@@ -4,21 +4,13 @@ package org.antinori.chess;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sourceforge.frittle.PieceType;
-import net.sourceforge.frittle.Player;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.ModelLoader;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Pixmap.Format;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
-import com.badlogic.gdx.graphics.g3d.loader.ObjLoader;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.NumberUtils;
@@ -26,13 +18,9 @@ import com.badlogic.gdx.utils.UBJsonReader;
 
 public class Board {
 	
-	public static final int BOARD_WIDTH = 8;
-	public static final int BOARD_HEIGHT = 8;
-
-	int width = BOARD_WIDTH;
-	int height = BOARD_HEIGHT;
-
-	private Cube[][] cubes;
+	String[] COORD_X = { "a", "b", "c", "d", "e", "f", "g", "h" };
+	
+	private List<Cube> cubes;
 	public List<Piece> pieces;
 	
 	public static final float MODEL_HEIGHT = 2.55f;
@@ -56,12 +44,12 @@ public class Board {
 	
 	public Board() {
 		
-		cubes = new Cube[width][height];
+		cubes = new ArrayList<Cube>();
 		
 		ModelBuilder modelBuilder = new ModelBuilder();
 		
-		for (int x = 0;x<8;x++) {
-			for (int z = 0;z<8;z++) {
+		for (int x=0;x<8;x++) {
+			for (int z=0;z<8;z++) {
 				
 				Color color = Color.BLUE;
 				if ((x + z) % 2 == 1) {
@@ -70,12 +58,11 @@ public class Board {
 					color = new Color(Color.rgb888(167, 191, 246));
 				}
 				
-				Vector3 pos = new Vector3(x*5f+2.5f, 0f, z*5f +2.5f);
+				String coord = COORD_X[z] + (x+1);
 				
-				Cube cube = new Cube(modelBuilder, color, pos, x, z);
-				this.cubes[x][z]= cube;
-
-
+				Vector3 pos = new Vector3(x*5f+2.5f, 0f, z*5f +2.5f);
+				Cube cube = new Cube(modelBuilder, color, pos, coord);
+				cubes.add(cube);
 			}
 		}
 		
@@ -95,6 +82,7 @@ public class Board {
 		knightWhiteModel = gloader.loadModel(Gdx.files.classpath("meshes/knight.g3db"));
 		knightBlackModel = gloader.loadModel(Gdx.files.classpath("meshes/knight-black.g3db"));
 		//knightModel.nodes.get(0).rotation.set(Y_AXIS, 180);
+
 
 		rookModel = gloader.loadModel(Gdx.files.classpath("meshes/rook.g3db"));
 		queenModel = gloader.loadModel(Gdx.files.classpath("meshes/queen.g3db"));
@@ -171,7 +159,7 @@ public class Board {
 		
 	}
 
-	public Cube[][] getCubes() {
+	public List<Cube> getCubes() {
 		return cubes;
 	}
 
@@ -179,17 +167,12 @@ public class Board {
 		return pieces;
 	}
 	
-	/**
-	 * Return the cube at position "b4".
-	 */
 	public Cube getCube(String coord) {
-		char c = coord.charAt(0);
-		int x = 0;
-		for (int i = 0;i<Cube.INDEX.length;i++) {
-			if (Cube.INDEX[i] == c) x = i;
+		Cube c = null;
+		for (Cube cube : cubes) {
+			if (cube.getCoordinate().equals(coord)) c = cube;
 		}
-		int y = Character.getNumericValue(coord.charAt(1)) - 1;
-		return cubes[y][x];
+		return c;
 	}
 	
 	public Piece getPiece(PieceType pt, Player pl) {
@@ -201,6 +184,12 @@ public class Board {
 			}
 		}
 		return piece;
+	}
+	
+	public Piece getPiece(char c) {
+		PieceType pt = PieceType.convert(c);
+		Player pl = (Character.isUpperCase(c)?Player.WHITE:Player.BLACK);
+		return getPiece(pt,pl);
 	}
 	
 	public boolean isSamePosition(Vector3 v1, Vector3 v2) {

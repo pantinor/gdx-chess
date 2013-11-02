@@ -1,18 +1,15 @@
 package org.antinori.chess;
 
 
-import net.sourceforge.frittle.Frittle;
-import net.sourceforge.frittle.Game;
-import net.sourceforge.frittle.GameState;
-import net.sourceforge.frittle.Move;
-import net.sourceforge.frittle.MoveList;
-import net.sourceforge.frittle.Moves;
-import net.sourceforge.frittle.PieceType;
-import net.sourceforge.frittle.Player;
-import net.sourceforge.frittle.ai.AI;
-import net.sourceforge.frittle.ai.Eval;
-import net.sourceforge.frittle.ui.XBoard;
-
+import com.alonsoruibal.chess.Config;
+import com.alonsoruibal.chess.Move;
+import com.alonsoruibal.chess.bitboard.BitboardUtils;
+import com.alonsoruibal.chess.evaluation.CompleteEvaluator;
+import com.alonsoruibal.chess.evaluation.Evaluator;
+import com.alonsoruibal.chess.search.SearchEngineThreaded;
+import com.alonsoruibal.chess.search.SearchObserver;
+import com.alonsoruibal.chess.search.SearchParameters;
+import com.alonsoruibal.chess.search.SearchStatusInfo;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
@@ -34,10 +31,22 @@ import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
-public class Main extends SimpleGame {
+public class Main extends SimpleGame implements SearchObserver {
 		
-    Frittle frittle;
-
+	Evaluator evaluator; 
+	SearchEngineThreaded engine;
+	SearchParameters searchParameters;
+	int opponentDefaultIndex = 1;
+	String timeString[] = {"1 second", "2 seconds", "5 seconds", "15 seconds", "30 seconds", "60 seconds"}; 
+	int timeValues[] = {1000, 2000, 5000, 15000, 30000, 60000};
+	int timeDefaultIndex = 0;
+	String eloString[] = {"ELO 1000", "ELO 1100", "ELO 1200", "ELO 1300", "ELO 1400", "ELO 1500", "ELO 1600", "ELO 1700", "ELO 1800", "ELO 1900", "ELO 2000", "ELO 2100"}; 
+	int eloValues[] = {1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900, 2000, 2100};
+	int eloDefaultIndex = 11;
+	
+	String opponentString[] = {"Computer Whites", "Computer Blacks", "Human vs Human", "Computer vs Computer"}; 
+	boolean userToMove = false;
+	
 	public Environment environment;
 	
 	public PerspectiveCamera cam;
@@ -59,7 +68,6 @@ public class Main extends SimpleGame {
 	public Board board;
 	
 	Cube lastSelectedTile = null;
-	MoveList moveList = null;
 	String lastSelectedPieceCoord;
 	
 	public static void main(String[] args) {
@@ -98,12 +106,16 @@ public class Main extends SimpleGame {
 //		
 //		createAxes();
 		
+		Config config = new Config();
+		config.setTranspositionTableSize(8); // Due to memory limits, TT is set to 8 MB
+		engine = new SearchEngineThreaded(config);
+		//engine.getConfig().setBook(new FileBook("/book_small.bin"));
+		evaluator = new CompleteEvaluator(config); 
+		searchParameters = new SearchParameters();
+		searchParameters.setMoveTime(timeValues[timeDefaultIndex]);
+		engine.setObserver(this);
 		
-		// Create new game and restart AI engine
-		Frittle.setGame(new Game());
-		Frittle.setAi(new AI());
-		Frittle.setProtocol(new XBoard());
-		
+		userToMove = true; //White starts, black is computer
 		
 	}
 
@@ -112,9 +124,6 @@ public class Main extends SimpleGame {
 		
 		cam.update();
 		
-		movePiecesToCurrentGameState();
-
-
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
 
@@ -130,117 +139,126 @@ public class Main extends SimpleGame {
 //		modelBatch.render(circlingLight, environment);
 		
 		
-		Cube[][] cubes = board.getCubes();
-		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
-			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
-				Cube cube = cubes[i][j];
-				if (cube != null) {
-					modelBatch.render(cube.getInstance(), environment);
-					//modelBatch.render(cube.getOutline(), environment);
-				}
-			}
+		for (Cube cube : board.getCubes()) {
+			modelBatch.render(cube.getInstance(), environment);
+			//modelBatch.render(cube.getOutline(), environment);
 		}
 		
 		for (Piece p : board.getPieces()) {
 			modelBatch.render(p.getInstance(), environment);			
 		}
 		
-        //modelBatch.render(axesInstance);
-		
+       //modelBatch.render(axesInstance);
 
 
 		modelBatch.end();
-		
-
 		
 	}
 	
 	@Override
 	public boolean touchUp(int x, int y, int pointer, int button) {
 		
+		if (!userToMove) {
+			return false;
+		}
+		
 		Ray pickRay = cam.getPickRay(Gdx.input.getX(), Gdx.input.getY());
 		
-		Cube[][] cubes = board.getCubes();
 		
-		for (int i = 0; i < Board.BOARD_WIDTH; i++) {
-			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
-				cubes[i][j].resetColor();
-			}
+		for (Cube cube : board.getCubes()) {
+			cube.resetColor();
 		}
 		
 		lastSelectedTile = null;
 				
-		outer: for (int i = 0; i < Board.BOARD_WIDTH; i++) {
-			for (int j = 0; j < Board.BOARD_HEIGHT; j++) {
-				Cube cube = cubes[i][j];
-				if (Intersector.intersectRayBoundsFast(pickRay, cube.getBoundingBox())) {
-					lastSelectedTile = cube;
-					lastSelectedTile.highlight();
-					break outer;
-				}
+		for (Cube cube : board.getCubes()) {
+			if (Intersector.intersectRayBoundsFast(pickRay, cube.getBoundingBox())) {
+				lastSelectedTile = cube;
+				lastSelectedTile.highlight();
+				break;
 			}
 		}
 		
 		if (lastSelectedTile == null) 
 			return false;
 		
-		
-		Player active = Frittle.getGame().getCurrentState().getActivePlayer();
-		if (active == Player.BLACK) {
-			if (moveList != null) moveList.clear();
-			return false;
-		}
-		
 		String coord = lastSelectedTile.getCoordinate();
-			
-		//check if last selected tile is in the move destination
-		boolean moved = false;
-		if (moveList != null && !moveList.isEmpty() && lastSelectedPieceCoord != null) {
-			for (Move m : moveList) {
-				if (m.toString().endsWith(coord) && m.toString().startsWith(lastSelectedPieceCoord)) {
-					System.out.println("Move: " + m.toString());
-					if (move(m)) {
-						moved = true;
-						moveList.clear();
-						lastSelectedPieceCoord = null;
-						break;
-					}
-				}
-			}
-		}
+		System.out.println("lastSelectedTile: "+coord);
 		
-        
+		
+		boolean moved = false;
+		if (lastSelectedPieceCoord != null && move(lastSelectedPieceCoord + coord)) {
+			moved = true;
+			lastSelectedPieceCoord = null;
+		}
+	        
 		if (!moved) {
+			//highlight the legal moves for this select piece
 			lastSelectedPieceCoord = coord;
-	        moveList = Frittle.getGame().getLegalMoves();
-			if (!moveList.isEmpty()) {
-				for (Move move : moveList) {
-					if (move.toString().startsWith(coord)) {
-						Cube c = board.getCube(Moves.toCoOrdinate(move.dest));
+			int[] legalMoves = new int[256];
+			int count = engine.getBoard().getLegalMoves(legalMoves);
+			if (count > 0) {
+				for (int i =0;i<count;i++) {
+					String dest = Move.toStringExt(legalMoves[i]);
+					if (dest == "none" || dest == "O-O" || dest == "O-O-O") {
+						continue;
+					}
+					String[] split = dest.split("-");
+					if (dest.contains(coord+'-')) {
+						Cube c = board.getCube(split[1]);
 						c.changeColor(Color.GREEN);
 					}
 				}
 			}	
 		}
 		
-		//printBoard();
-		
-        //Frittle.write("Evaluation: "+(float)Eval.evaluate(Frittle.getGame().getCurrentState())/100);
-
-		
 		return false;
 	}
 	
-	public boolean move(Move move) {
-		boolean moved = false;
-		if (Frittle.getGame().doMove(move.toString())) {
-			if (Frittle.getAI().forceMode == false && Frittle.getGame().isGameOver() == false) {
-				Frittle.getAI().go();
-				moved = true;
-			}
+	
+	private boolean move(String notation) {
+		int move = Move.getFromString(engine.getBoard(), notation, false);
+		if (engine.getBoard().isMoveLegal(move)) {
+			engine.getBoard().doMove(move);
+			checkUserToMove();
+			return true;
 		}
-		return moved;
+		return false;
+    }
+
+	public void bestMove(int bestMove, int ponder) {
+		
+		if (userToMove) return;
+		
+		Cube c1 = board.getCube(BitboardUtils.index2Algebraic(Move.getToIndex(bestMove)));
+		c1.changeColor(Color.PINK);
+		Cube c2 = board.getCube(BitboardUtils.index2Algebraic(Move.getFromIndex(bestMove)));
+		c2.changeColor(Color.PINK);
+		
+		engine.getBoard().doMove(bestMove);
+		checkUserToMove();
+		
 	}
+	
+	private void checkUserToMove() {
+		
+		userToMove = false;
+		
+		if (engine.getBoard().getTurn()) userToMove = true;
+
+		
+		if (engine.getBoard().isEndGame() == 0) {
+			engine.go(searchParameters);
+		}
+		
+		movePiecesToCurrentGameState();
+	}
+	
+
+	public void info(SearchStatusInfo info) {
+		
+	}
+
 	
 	@Override
 	public boolean keyDown (int keycode) {
@@ -277,8 +295,6 @@ public class Main extends SimpleGame {
 		return false;
 	}
 
-
-
 	@Override
 	public boolean scrolled (int amount) {
 		float scrollFactor = -0.1f;
@@ -286,6 +302,31 @@ public class Main extends SimpleGame {
 		cameraPosition = cam.position;
 		//System.out.println(cameraPosition);
 		return false;
+	}
+	
+	private void movePiecesToCurrentGameState() {
+		
+		board.reset();
+		
+		//place pieces on the board
+		for (String coord : BitboardUtils.squareNames) {
+			char c = engine.getBoard().getPieceAt(BitboardUtils.algebraic2Square(coord));
+			if (c == '.') continue;
+			Piece piece = board.getPiece(c);
+			if (piece != null) {
+				piece.setPlaced(true);
+				Cube cube = board.getCube(coord);
+				piece.setPos(cube.getPos());
+			}
+		}
+		
+		//now place any captured pieces on the side
+		for (Piece p : board.getPieces()) {
+			if (!p.isPlaced()) {
+				board.placeInTray(p);
+			}
+		}
+
 	}
 	
 	
@@ -317,62 +358,6 @@ public class Main extends SimpleGame {
 		axesModel = modelBuilder.end();
 		axesInstance = new ModelInstance(axesModel);
 	}
-    
-	/**
-	 * Prints an ASCII equivalent of the current state of the board to standard output.
-	 */
-	private void printBoard() {
-		StringBuffer line;
-		GameState state = Frittle.getGame().getCurrentState();
-		for (byte r = 8; r > 0; r--) {
-			line = new StringBuffer();
-			line.append(r + "| ");
-			for (char f = 'a'; f != 'i'; f++) {
-				byte i = Moves.toIndex(f, r);
-				if (state.getBoard()[i] == null)
-					line.append("- ");
-				else
-					line.append(state.getBoard()[i].getChar() + " ");
-			}
-			Frittle.write(line.toString());
-		}
-		Frittle.write("------------------");
-		Frittle.write(" | a b c d e f g h");
-		Frittle.write("  " + state.getActivePlayer().toString() + " TO MOVE");
-	}
-	
-	private void movePiecesToCurrentGameState() {
-		
-		board.reset();
-		
-		GameState state = Frittle.getGame().getCurrentState();
-		for (byte r = 8; r > 0; r--) {
-			for (char f = 'a'; f != 'i'; f++) {
-				byte i = Moves.toIndex(f, r);
-				if (state.getBoard()[i] != null) {
-					PieceType pt = state.getBoard()[i].getType();
-					Player pl = state.getBoard()[i].getPlayer();
-					
-					Piece piece = board.getPiece(pt, pl);
-					piece.setPlaced(true);
-					
-					String coord = "" + f + r;
-					Cube cube = board.getCube(coord);
-					piece.setPos(cube.getPos());
-				}
-			}
-		}
-		
-		//now place any captured pieces on the side
-		for (Piece p : board.getPieces()) {
-			if (!p.isPlaced()) {
-				board.placeInTray(p);
-			}
-		}
-
-	}
-	
-	
 
 
 }
