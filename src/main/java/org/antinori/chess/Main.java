@@ -11,12 +11,10 @@ import com.alonsoruibal.chess.search.SearchObserver;
 import com.alonsoruibal.chess.search.SearchParameters;
 import com.alonsoruibal.chess.search.SearchStatusInfo;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -24,11 +22,10 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
+import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Intersector;
-import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
 
 public class Main extends SimpleGame implements SearchObserver {
@@ -48,24 +45,11 @@ public class Main extends SimpleGame implements SearchObserver {
 	boolean userToMove = false;
 	
 	public Environment environment;
-	
-	public PerspectiveCamera cam;
-	
-	public static final float CAMERA_HEIGHT = 30f;
-	
-	public static final Vector3 startCameraPosition = new Vector3(-10f, CAMERA_HEIGHT, 20f);
-	public static final Vector3 leftCameraPosition = new Vector3(20f, 20f, -10f);
-	public static final Vector3 rightCameraPosition = new Vector3(20f, 20f, 50f);
-	
-	private Vector3 cameraPosition = startCameraPosition;
-	
-	private float lightPosition = 0;
-	private Vector3 lightCenter = new Vector3(20f, 20f, 20f);
-	private float radiusA = 13f;
-	private float radiusB = 13f;
-	private ModelInstance circlingLight;
-	
+	DirectionalShadowLight shadowLight;
+		
 	public Board board;
+	
+
 	
 	Cube lastSelectedTile = null;
 	String lastSelectedPieceCoord;
@@ -77,39 +61,32 @@ public class Main extends SimpleGame implements SearchObserver {
 		cfg.width = 1280;
 		cfg.height = 768;
 		new LwjglApplication(new Main(), cfg);
-
 	}
 	
 
 	@Override
 	public void init() {
 		environment = new Environment();
-		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.5f, 0.5f, 0.5f, 1f));
-		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1.f));
+		//environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+		
+		environment.add(
+			(shadowLight = new DirectionalShadowLight(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 20f, 20f, 1f, 100f)).set(0.8f, 0.8f, 0.8f, -1f, -.5f, -.5f)
+		);
+		environment.shadowMap = shadowLight;
+		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		modelBatch = new ModelBatch();
+		
 
-		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		cam.position.set(cameraPosition);
-		cam.lookAt(20, 0, 20);
-
-		cam.near = 0.1f;
-		cam.far = 300f;
-		cam.update();
 		
 		board = new Board();
-		
-		
-//		ModelBuilder modelBuilder = new ModelBuilder();
-//		Model sphere = modelBuilder.createSphere(2f, 2f, 2f, 20, 20, new Material(), Usage.Position | Usage.Normal | Usage.TextureCoordinates);
-//		circlingLight = new ModelInstance(sphere);
-//		
+			
 //		createAxes();
 		
 		Config config = new Config();
-		config.setTranspositionTableSize(8); // Due to memory limits, TT is set to 8 MB
+		config.setTranspositionTableSize(8);
 		engine = new SearchEngineThreaded(config);
-		//engine.getConfig().setBook(new FileBook("/book_small.bin"));
 		evaluator = new CompleteEvaluator(config); 
 		searchParameters = new SearchParameters();
 		searchParameters.setMoveTime(timeValues[timeDefaultIndex]);
@@ -129,27 +106,27 @@ public class Main extends SimpleGame implements SearchObserver {
 
 		modelBatch.begin(cam);
 		
-		
-//		lightPosition += delta * 1.0f;
-//		float lx = (float) (radiusA * Math.cos(lightPosition));
-//		float ly = (float) (radiusB * Math.sin(lightPosition));
-//		Vector3 lightVector = new Vector3(lx, 0, ly).add(lightCenter);
-//		circlingLight.transform.setToTranslation(lightVector);
-//		
-//		modelBatch.render(circlingLight, environment);
-		
-		
+		modelBatch.render(board.skydome, environment);	
+		modelBatch.render(board.floor, environment);	
+
+		shadowLight.begin(cam);
+		shadowBatch.begin(shadowLight.getCamera());
+				
 		for (Cube cube : board.getCubes()) {
 			modelBatch.render(cube.getInstance(), environment);
+			shadowBatch.render(cube.getInstance());
 			//modelBatch.render(cube.getOutline(), environment);
 		}
-		
+
 		for (Piece p : board.getPieces()) {
-			modelBatch.render(p.getInstance(), environment);			
+			modelBatch.render(p.getInstance(), environment);	
+			shadowBatch.render(p.getInstance());
 		}
 		
-       //modelBatch.render(axesInstance);
-
+		shadowBatch.end();
+		shadowLight.end();
+		
+        //modelBatch.render(axesInstance);
 
 		modelBatch.end();
 		
@@ -260,49 +237,7 @@ public class Main extends SimpleGame implements SearchObserver {
 	}
 
 	
-	@Override
-	public boolean keyDown (int keycode) {
-				
-		if (keycode == Input.Keys.NUM_1) {
-			cam.position.set(startCameraPosition);
-			cam.lookAt(20f, 5f, 20f);
-			return false;
-		}
-		
-		if (keycode == Input.Keys.NUM_2) {
-			cam.position.set(leftCameraPosition);
-			cam.lookAt(20f, 5f, 20f);
-			return false;
-		}
-		
-		if (keycode == Input.Keys.NUM_3) {
-			cam.position.set(rightCameraPosition);
-			cam.lookAt(20f, 5f, 20f);
-			return false;
-		}
 
-		if (keycode == Input.Keys.RIGHT) 
-			cameraPosition.z += 1f;
-		if (keycode == Input.Keys.UP) 
-			cameraPosition.x += 1f;
-		if (keycode == Input.Keys.LEFT) 
-			cameraPosition.z -= 1f;
-		if (keycode == Input.Keys.DOWN) 
-			cameraPosition.x -= 1f;
-
-		cam.position.set(cameraPosition);
-
-		return false;
-	}
-
-	@Override
-	public boolean scrolled (int amount) {
-		float scrollFactor = -0.1f;
-		cam.translate(new Vector3(cam.direction).scl(amount * scrollFactor * 10f));
-		cameraPosition = cam.position;
-		//System.out.println(cameraPosition);
-		return false;
-	}
 	
 	private void movePiecesToCurrentGameState() {
 		

@@ -5,18 +5,30 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.ModelLoader;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
+import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.NumberUtils;
 import com.badlogic.gdx.utils.UBJsonReader;
 
 public class Board {
+	
+	public AssetManager assets;
+	public ModelInstance skydome;
+	public ModelInstance floor;
 	
 	String[] COORD_X = { "a", "b", "c", "d", "e", "f", "g", "h" };
 	
@@ -43,6 +55,24 @@ public class Board {
 	//public static final Texture lightTexture = new Texture(Gdx.files.classpath("data/woodlight0.jpg"), Format.RGB565, true);
 	
 	public Board() {
+		
+		assets = new AssetManager(new ClasspathFileHandleResolver());
+		assets.load("skydome.g3db", Model.class);
+		assets.load("grass.png", Texture.class);
+		assets.update(1000);
+		
+		ModelBuilder builder = new ModelBuilder();
+		builder.begin();
+		MeshPartBuilder part = builder.part("floor", GL10.GL_TRIANGLES, Usage.Position | Usage.TextureCoordinates | Usage.Normal, new Material());
+		for (float x = -200f; x < 200f; x += 10f) {
+			for (float z = -200f; z < 200f; z += 10f) {
+				part.rect(x, 0, z+10f, x+10f, 0, z+10f, x+10f, 0, z, x, 0, z, 0, 1, 0);
+			}
+		}
+		Model floorModel = builder.end();
+		floorModel.materials.get(0).set(TextureAttribute.createDiffuse(assets.get("grass.png", Texture.class)));
+		floor = new ModelInstance(floorModel);
+		skydome = new ModelInstance(assets.get("skydome.g3db", Model.class));
 		
 		cubes = new ArrayList<Cube>();
 		
