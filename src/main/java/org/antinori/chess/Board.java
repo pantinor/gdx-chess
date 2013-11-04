@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
@@ -29,6 +30,8 @@ public class Board {
 	public AssetManager assets;
 	public ModelInstance skydome;
 	public ModelInstance floor;
+	public ModelInstance subfloor;
+
 	
 	String[] COORD_X = { "a", "b", "c", "d", "e", "f", "g", "h" };
 	
@@ -58,21 +61,22 @@ public class Board {
 		
 		assets = new AssetManager(new ClasspathFileHandleResolver());
 		assets.load("skydome.g3db", Model.class);
-		assets.load("grass.png", Texture.class);
-		assets.update(1000);
+		assets.load("floor.jpg", Texture.class);
+		assets.update(2000);
+		
+		skydome = new ModelInstance(assets.get("skydome.g3db", Model.class));
+
 		
 		ModelBuilder builder = new ModelBuilder();
 		builder.begin();
 		MeshPartBuilder part = builder.part("floor", GL10.GL_TRIANGLES, Usage.Position | Usage.TextureCoordinates | Usage.Normal, new Material());
-		for (float x = -200f; x < 200f; x += 10f) {
-			for (float z = -200f; z < 200f; z += 10f) {
-				part.rect(x, 0, z+10f, x+10f, 0, z+10f, x+10f, 0, z, x, 0, z, 0, 1, 0);
-			}
-		}
+		part.circle(60, 40, 0, 0, 0, 0, 1, 0);
 		Model floorModel = builder.end();
-		floorModel.materials.get(0).set(TextureAttribute.createDiffuse(assets.get("grass.png", Texture.class)));
+		floorModel.materials.get(0).set(TextureAttribute.createDiffuse(assets.get("floor.jpg", Texture.class)));
 		floor = new ModelInstance(floorModel);
-		skydome = new ModelInstance(assets.get("skydome.g3db", Model.class));
+		
+		Model sf = builder.createBox(500, 2, 500, new Material(ColorAttribute.createDiffuse(Color.BLACK)), Usage.Position | Usage.Normal);
+		subfloor = new ModelInstance(sf, new Vector3(0,-2,0));
 		
 		cubes = new ArrayList<Cube>();
 		
@@ -90,7 +94,7 @@ public class Board {
 				
 				String coord = COORD_X[z] + (x+1);
 				
-				Vector3 pos = new Vector3(x*5f+2.5f, 0f, z*5f +2.5f);
+				Vector3 pos = new Vector3(x*5+2.5f-20, 0, z*5+2.5f-20);
 				Cube cube = new Cube(modelBuilder, color, pos, coord);
 				cubes.add(cube);
 			}
@@ -127,43 +131,41 @@ public class Board {
 
 		// Pawns
 		for (int c = 0; c < 8; c++) {
-			Vector3 pos = new Vector3(1*5+2.5f, MODEL_HEIGHT, c*5 +2.5f);
-			pieces.add(new Piece(PieceType.PAWN, Player.WHITE, pawnModel, pos)); // White
-			pos = new Vector3(6*5+2.5f, MODEL_HEIGHT, c*5 +2.5f);
-			pieces.add(new Piece(PieceType.PAWN, Player.BLACK, pawnModel, pos)); // Black
+			pieces.add(new Piece(PieceType.PAWN, Player.WHITE, pawnModel, Vector3.Zero)); // White
+			pieces.add(new Piece(PieceType.PAWN, Player.BLACK, pawnModel, Vector3.Zero)); // Black
 		}
 		
 		
 		// Other White pieces
-		pieces.add(new Piece(PieceType.ROOK, Player.WHITE, rookModel, 		new Vector3(0*5+2.5f, MODEL_HEIGHT, 0*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KNIGHT, Player.WHITE, knightWhiteModel, 	new Vector3(0*5+2.5f, MODEL_HEIGHT, 1*5 +2.5f)));
-		pieces.add(new Piece(PieceType.BISHOP, Player.WHITE, bishopModel,	new Vector3(0*5+2.5f, MODEL_HEIGHT, 2*5 +2.5f)));
-		pieces.add(new Piece(PieceType.QUEEN, Player.WHITE, queenModel,		new Vector3(0*5+2.5f, MODEL_HEIGHT, 3*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KING, Player.WHITE, kingModel, 		new Vector3(0*5+2.5f, MODEL_HEIGHT, 4*5 +2.5f)));
-		pieces.add(new Piece(PieceType.BISHOP, Player.WHITE, bishopModel, 	new Vector3(0*5+2.5f, MODEL_HEIGHT, 5*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KNIGHT, Player.WHITE, knightWhiteModel, 	new Vector3(0*5+2.5f, MODEL_HEIGHT, 6*5 +2.5f)));
-		pieces.add(new Piece(PieceType.ROOK, Player.WHITE, rookModel, 		new Vector3(0*5+2.5f, MODEL_HEIGHT, 7*5 +2.5f)));
+		pieces.add(new Piece(PieceType.ROOK, Player.WHITE, rookModel, 			Vector3.Zero));
+		pieces.add(new Piece(PieceType.KNIGHT, Player.WHITE, knightWhiteModel, 	Vector3.Zero));
+		pieces.add(new Piece(PieceType.BISHOP, Player.WHITE, bishopModel,		Vector3.Zero));
+		pieces.add(new Piece(PieceType.QUEEN, Player.WHITE, queenModel,			Vector3.Zero));
+		pieces.add(new Piece(PieceType.KING, Player.WHITE, kingModel, 			Vector3.Zero));
+		pieces.add(new Piece(PieceType.BISHOP, Player.WHITE, bishopModel, 		Vector3.Zero));
+		pieces.add(new Piece(PieceType.KNIGHT, Player.WHITE, knightWhiteModel, 	Vector3.Zero));
+		pieces.add(new Piece(PieceType.ROOK, Player.WHITE, rookModel, 			Vector3.Zero));
 
 		
 		// Other Black pieces
-		pieces.add(new Piece(PieceType.ROOK, Player.BLACK, rookModel, 		new Vector3(7*5+2.5f, MODEL_HEIGHT, 0*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KNIGHT, Player.BLACK, knightBlackModel, 	new Vector3(7*5+2.5f, MODEL_HEIGHT, 1*5 +2.5f)));
-		pieces.add(new Piece(PieceType.BISHOP, Player.BLACK, bishopModel,	new Vector3(7*5+2.5f, MODEL_HEIGHT, 2*5 +2.5f)));
-		pieces.add(new Piece(PieceType.QUEEN, Player.BLACK, queenModel,		new Vector3(7*5+2.5f, MODEL_HEIGHT, 3*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KING, Player.BLACK, kingModel, 		new Vector3(7*5+2.5f, MODEL_HEIGHT, 4*5 +2.5f)));
-		pieces.add(new Piece(PieceType.BISHOP, Player.BLACK, bishopModel, 	new Vector3(7*5+2.5f, MODEL_HEIGHT, 5*5 +2.5f)));
-		pieces.add(new Piece(PieceType.KNIGHT, Player.BLACK, knightBlackModel, 	new Vector3(7*5+2.5f, MODEL_HEIGHT, 6*5 +2.5f)));
-		pieces.add(new Piece(PieceType.ROOK, Player.BLACK, rookModel, 		new Vector3(7*5+2.5f, MODEL_HEIGHT, 7*5 +2.5f)));	
+		pieces.add(new Piece(PieceType.ROOK, Player.BLACK, rookModel, 			Vector3.Zero));
+		pieces.add(new Piece(PieceType.KNIGHT, Player.BLACK, knightBlackModel, 	Vector3.Zero));
+		pieces.add(new Piece(PieceType.BISHOP, Player.BLACK, bishopModel,		Vector3.Zero));
+		pieces.add(new Piece(PieceType.QUEEN, Player.BLACK, queenModel,			Vector3.Zero));
+		pieces.add(new Piece(PieceType.KING, Player.BLACK, kingModel, 			Vector3.Zero));
+		pieces.add(new Piece(PieceType.BISHOP, Player.BLACK, bishopModel, 		Vector3.Zero));
+		pieces.add(new Piece(PieceType.KNIGHT, Player.BLACK, knightBlackModel, 	Vector3.Zero));
+		pieces.add(new Piece(PieceType.ROOK, Player.BLACK, rookModel, 			Vector3.Zero));	
 		
 		
-		float factor1 = 2.5f;
-		float factor2 = -7.5f;
-		float factor3 = 45f;
+		float factor1 = 2.5f - 20;
+		float factor2 = -7.5f - 20;
+		float factor3 = 45 - 20;
 		
 		//set tray positions
 		for (int c = 0; c < 8; c++) {
-			whiteTray.add(new TrayPosition(PieceType.PAWN, Player.WHITE, new Vector3(factor1*c, MODEL_HEIGHT, factor2 + 2.5f)));
-			blackTray.add(new TrayPosition(PieceType.PAWN, Player.BLACK, new Vector3(factor1*c, MODEL_HEIGHT, factor3 - 2.5f)));
+			whiteTray.add(new TrayPosition(PieceType.PAWN, Player.WHITE, new Vector3(2.5f*c-20, MODEL_HEIGHT, factor2 + 2.5f)));
+			blackTray.add(new TrayPosition(PieceType.PAWN, Player.BLACK, new Vector3(2.5f*c-20, MODEL_HEIGHT, factor3 - 2.5f)));
 		}
 		
 		whiteTray.add(new TrayPosition(PieceType.ROOK, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
@@ -175,7 +177,7 @@ public class Board {
 		whiteTray.add(new TrayPosition(PieceType.QUEEN, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
 		whiteTray.add(new TrayPosition(PieceType.KING, Player.WHITE, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor2)));
 		
-		factor1 = 2.5f;
+		factor1 = 2.5f - 20;
 		
 		blackTray.add(new TrayPosition(PieceType.ROOK, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));
 		blackTray.add(new TrayPosition(PieceType.ROOK, Player.BLACK, 	new Vector3(factor1 += 2.5f, MODEL_HEIGHT, factor3)));

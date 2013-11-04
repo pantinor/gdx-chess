@@ -22,6 +22,7 @@ import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
@@ -68,13 +69,13 @@ public class Main extends SimpleGame implements SearchObserver {
 	public void init() {
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.4f, 0.4f, 0.4f, 1.f));
-		//environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
+		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		
-		environment.add(
-			(shadowLight = new DirectionalShadowLight(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 20f, 20f, 1f, 100f)).set(0.8f, 0.8f, 0.8f, -1f, -.5f, -.5f)
-		);
-		environment.shadowMap = shadowLight;
-		shadowBatch = new ModelBatch(new DepthShaderProvider());
+//		environment.add(
+//			(shadowLight = new DirectionalShadowLight(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 100, 100, 1, 100)).set(0.8f, 0.8f, 0.8f, -1f, -.5f, -.5f)
+//		);
+//		environment.shadowMap = shadowLight;
+//		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		modelBatch = new ModelBatch();
 		
@@ -82,7 +83,7 @@ public class Main extends SimpleGame implements SearchObserver {
 		
 		board = new Board();
 			
-//		createAxes();
+		//createAxes();
 		
 		Config config = new Config();
 		config.setTranspositionTableSize(8);
@@ -93,6 +94,9 @@ public class Main extends SimpleGame implements SearchObserver {
 		engine.setObserver(this);
 		
 		userToMove = true; //White starts, black is computer
+		
+		movePiecesToCurrentGameState();
+
 		
 	}
 
@@ -108,23 +112,24 @@ public class Main extends SimpleGame implements SearchObserver {
 		
 		modelBatch.render(board.skydome, environment);	
 		modelBatch.render(board.floor, environment);	
+		modelBatch.render(board.subfloor, environment);	
 
-		shadowLight.begin(cam);
-		shadowBatch.begin(shadowLight.getCamera());
+		//shadowLight.begin(cam);
+		//shadowBatch.begin(shadowLight.getCamera());
 				
 		for (Cube cube : board.getCubes()) {
 			modelBatch.render(cube.getInstance(), environment);
-			shadowBatch.render(cube.getInstance());
+			//shadowBatch.render(cube.getInstance());
 			//modelBatch.render(cube.getOutline(), environment);
 		}
 
 		for (Piece p : board.getPieces()) {
 			modelBatch.render(p.getInstance(), environment);	
-			shadowBatch.render(p.getInstance());
+			//shadowBatch.render(p.getInstance());
 		}
 		
-		shadowBatch.end();
-		shadowLight.end();
+		//shadowBatch.end();
+		//shadowLight.end();
 		
         //modelBatch.render(axesInstance);
 
@@ -160,7 +165,7 @@ public class Main extends SimpleGame implements SearchObserver {
 			return false;
 		
 		String coord = lastSelectedTile.getCoordinate();
-		System.out.println("lastSelectedTile: "+coord);
+		//System.out.println("lastSelectedTile: "+coord);
 		
 		
 		boolean moved = false;
@@ -172,19 +177,15 @@ public class Main extends SimpleGame implements SearchObserver {
 		if (!moved) {
 			//highlight the legal moves for this select piece
 			lastSelectedPieceCoord = coord;
-			int[] legalMoves = new int[256];
+			int[] legalMoves = new int[128];
 			int count = engine.getBoard().getLegalMoves(legalMoves);
 			if (count > 0) {
-				for (int i =0;i<count;i++) {
-					String dest = Move.toStringExt(legalMoves[i]);
-					if (dest == "none" || dest == "O-O" || dest == "O-O-O") {
-						continue;
-					}
-					String[] split = dest.split("-");
-					if (dest.contains(coord+'-')) {
-						Cube c = board.getCube(split[1]);
-						c.changeColor(Color.GREEN);
-					}
+				for (int i=0;i<count;i++) {
+					String to = BitboardUtils.index2Algebraic(Move.getToIndex(legalMoves[i]));
+					String from = BitboardUtils.index2Algebraic(Move.getFromIndex(legalMoves[i]));
+					if (!from.equals(coord)) continue;
+					Cube c = board.getCube(to);
+					c.changeColor(Color.GREEN);
 				}
 			}	
 		}
@@ -222,7 +223,6 @@ public class Main extends SimpleGame implements SearchObserver {
 		userToMove = false;
 		
 		if (engine.getBoard().getTurn()) userToMove = true;
-
 		
 		if (engine.getBoard().isEndGame() == 0) {
 			engine.go(searchParameters);
@@ -235,8 +235,6 @@ public class Main extends SimpleGame implements SearchObserver {
 	public void info(SearchStatusInfo info) {
 		
 	}
-
-	
 
 	
 	private void movePiecesToCurrentGameState() {
