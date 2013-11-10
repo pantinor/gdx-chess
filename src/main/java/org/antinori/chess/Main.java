@@ -23,11 +23,13 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
-import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.MeshPartBuilder;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Intersector;
 import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 public class Main extends SimpleGame implements SearchObserver {
 		
@@ -49,8 +51,8 @@ public class Main extends SimpleGame implements SearchObserver {
 	DirectionalShadowLight shadowLight;
 		
 	public Board board;
-	
 
+	protected TextButton undoButton;
 	
 	Cube lastSelectedTile = null;
 	String lastSelectedPieceCoord;
@@ -72,13 +74,14 @@ public class Main extends SimpleGame implements SearchObserver {
 		environment.add(new DirectionalLight().set(0.8f, 0.8f, 0.8f, -1f, -0.8f, -0.2f));
 		
 //		environment.add(
-//			(shadowLight = new DirectionalShadowLight(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), 100, 100, 1, 100)).set(0.8f, 0.8f, 0.8f, -1f, -.5f, -.5f)
+//			(shadowLight = new DirectionalShadowLight(2048, 2048, 100, 100, 1, 100)).set(0.8f, 0.8f, 0.8f, -1f, -.5f, -.5f)
 //		);
 //		environment.shadowMap = shadowLight;
 //		shadowBatch = new ModelBatch(new DepthShaderProvider());
 
 		modelBatch = new ModelBatch();
 		
+		addUI();
 
 		
 		board = new Board();
@@ -134,6 +137,8 @@ public class Main extends SimpleGame implements SearchObserver {
         //modelBatch.render(axesInstance);
 
 		modelBatch.end();
+		
+
 		
 	}
 	
@@ -261,6 +266,24 @@ public class Main extends SimpleGame implements SearchObserver {
 		}
 
 	}
+	
+	
+	protected void addUI() {
+		undoButton = new TextButton("Undo Last Move", skin);
+		undoButton.addListener(new ChangeListener() {
+			public void changed (ChangeEvent event, Actor actor) {
+				engine.stop();
+				engine.getBoard().undoMove();
+				checkUserToMove() ;
+
+			}
+		});
+		undoButton.setPosition(hudWidth - undoButton.getWidth(), 0);
+		hud.addActor(undoButton);
+	}
+	
+
+	
 	
 	
 	

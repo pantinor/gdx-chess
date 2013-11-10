@@ -7,6 +7,8 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 public abstract class SimpleGame implements ApplicationListener, InputProcessor {
 
@@ -14,6 +16,12 @@ public abstract class SimpleGame implements ApplicationListener, InputProcessor 
 	public ModelBatch shadowBatch;
 	public CameraInputController inputController;
 	public PerspectiveCamera cam;
+	
+	public final static int PREF_HUDWIDTH = 640;
+	public final static int PREF_HUDHEIGHT = 480;
+	protected Stage hud;
+	protected float hudWidth, hudHeight;
+	protected Skin skin;
 
 	public SimpleGame() {
 	}
@@ -34,14 +42,20 @@ public abstract class SimpleGame implements ApplicationListener, InputProcessor 
 		inputController = new CameraInputController(cam);
 		inputController.rotateLeftKey = inputController.rotateRightKey = inputController.forwardKey = inputController.backwardKey = 0;
 
-		Gdx.input.setInputProcessor(new InputMultiplexer(this, inputController));
+		hud = new Stage(PREF_HUDWIDTH, PREF_HUDHEIGHT, true);
+		hudWidth = hud.getWidth();
+		hudHeight = hud.getHeight();
+		skin = new Skin(Gdx.files.classpath("uiskin.json"));
 		
 		init();		
-
+		
+		Gdx.input.setInputProcessor(new InputMultiplexer(this, hud, inputController));
 	}
 
 	public void render() {
 		draw(Gdx.graphics.getDeltaTime());
+		
+		hud.draw();
 	}
 
 	public boolean keyDown(int keycode) {
