@@ -1,7 +1,7 @@
 package org.antinori.chess;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
@@ -55,7 +55,7 @@ public class Cube {
 		ModelBuilder modelBuilder = new ModelBuilder();
 		modelBuilder.begin();
 		
-		MeshPartBuilder builder = modelBuilder.part("box", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
+		MeshPartBuilder builder = modelBuilder.part("box", GL30.GL_LINES, Usage.Position | Usage.ColorUnpacked, new Material());
 		
 		builder.setColor(Color.PINK);
 		

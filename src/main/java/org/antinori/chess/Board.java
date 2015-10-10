@@ -10,7 +10,7 @@ import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.ModelLoader;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -69,7 +69,7 @@ public class Board {
 		
 		ModelBuilder builder = new ModelBuilder();
 		builder.begin();
-		MeshPartBuilder part = builder.part("floor", GL10.GL_TRIANGLES, Usage.Position | Usage.TextureCoordinates | Usage.Normal, new Material());
+		MeshPartBuilder part = builder.part("floor", GL30.GL_TRIANGLES, Usage.Position | Usage.TextureCoordinates | Usage.Normal, new Material());
 		part.circle(60, 40, 0, 0, 0, 0, 1, 0);
 		Model floorModel = builder.end();
 		floorModel.materials.get(0).set(TextureAttribute.createDiffuse(assets.get("floor.jpg", Texture.class)));

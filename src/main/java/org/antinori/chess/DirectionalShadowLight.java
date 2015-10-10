@@ -3,8 +3,7 @@ package org.antinori.chess;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
-import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
@@ -35,7 +34,7 @@ public class DirectionalShadowLight extends DirectionalLight implements ShadowMa
 		textureDesc = new TextureDescriptor();
 		textureDesc.minFilter = textureDesc.minFilter = Texture.TextureFilter.Linear; //GL10.GL_NEAREST;
 		textureDesc.uWrap = textureDesc.vWrap = Texture.TextureWrap.ClampToEdge;
-		Gdx.app.log("Test", Gdx.gl20.glGetString(GL20.GL_EXTENSIONS));
+		Gdx.app.log("Test", Gdx.gl20.glGetString(GL30.GL_EXTENSIONS));
 	}
 	
 	public void update(final Camera camera) {
@@ -67,13 +66,13 @@ public class DirectionalShadowLight extends DirectionalLight implements ShadowMa
 		fbo.begin();
 		Gdx.gl.glViewport(0, 0, w, h);
 		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-		Gdx.gl.glEnable(GL10.GL_SCISSOR_TEST);
+		Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT | GL30.GL_DEPTH_BUFFER_BIT);
+		Gdx.gl.glEnable(GL30.GL_SCISSOR_TEST);
 		Gdx.gl.glScissor(1, 1, w - 2, h - 2);
 	}
 	
 	public void end() {
-		Gdx.gl.glDisable(GL10.GL_SCISSOR_TEST);
+		Gdx.gl.glDisable(GL30.GL_SCISSOR_TEST);
 		fbo.end();
 	}
 	

@@ -19,7 +19,7 @@ package com.badlogic.gdx.tests.g3d;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL30;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Material;
@@ -67,13 +67,13 @@ public abstract class BaseG3dTest extends GdxTest {
 	private void createAxes() {
 		ModelBuilder modelBuilder = new ModelBuilder();
 		modelBuilder.begin();
-		MeshPartBuilder builder = modelBuilder.part("grid", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
+		MeshPartBuilder builder = modelBuilder.part("grid", GL30.GL_LINES, Usage.Position | Usage.ColorUnpacked, new Material());
 		builder.setColor(Color.LIGHT_GRAY);
 		for (float t = GRID_MIN; t <= GRID_MAX; t+=GRID_STEP) {
 			builder.line(t, 0, GRID_MIN, t, 0, GRID_MAX);
 			builder.line(GRID_MIN, 0, t, GRID_MAX, 0, t);
 		}
-		builder = modelBuilder.part("axes", GL10.GL_LINES, Usage.Position | Usage.Color, new Material());
+		builder = modelBuilder.part("axes", GL30.GL_LINES, Usage.Position | Usage.ColorUnpacked, new Material());
 		builder.setColor(Color.RED);
 		builder.line(0, 0, 0, 100, 0, 0);
 		builder.setColor(Color.GREEN);
@@ -108,7 +108,7 @@ public abstract class BaseG3dTest extends GdxTest {
 		inputController.update();
 		
 		Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+		Gdx.gl.glClear(GL30.GL_COLOR_BUFFER_BIT | GL30.GL_DEPTH_BUFFER_BIT);
 
 		render(instances);
 	}
