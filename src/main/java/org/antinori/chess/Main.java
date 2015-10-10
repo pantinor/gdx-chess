@@ -81,7 +81,7 @@ public class Main extends SimpleGame implements SearchObserver {
 
         board = new Board();
 
-		//createAxes();
+        //createAxes();
         Config config = new Config();
         config.setTranspositionTableSize(8);
         engine = new SearchEngineThreaded(config);
@@ -110,11 +110,11 @@ public class Main extends SimpleGame implements SearchObserver {
         modelBatch.render(board.floor, environment);
         modelBatch.render(board.subfloor, environment);
 
-		//shadowLight.begin(cam);
+        //shadowLight.begin(cam);
         //shadowBatch.begin(shadowLight.getCamera());
         for (Cube cube : board.getCubes()) {
             modelBatch.render(cube.getInstance(), environment);
-			//shadowBatch.render(cube.getInstance());
+            //shadowBatch.render(cube.getInstance());
             //modelBatch.render(cube.getOutline(), environment);
         }
 
@@ -123,7 +123,7 @@ public class Main extends SimpleGame implements SearchObserver {
             //shadowBatch.render(p.getInstance());
         }
 
-		//shadowBatch.end();
+        //shadowBatch.end();
         //shadowLight.end();
         //modelBatch.render(axesInstance);
         modelBatch.end();
@@ -158,7 +158,7 @@ public class Main extends SimpleGame implements SearchObserver {
         }
 
         String coord = lastSelectedTile.getCoordinate();
-		//System.out.println("lastSelectedTile: "+coord);
+        //System.out.println("lastSelectedTile: "+coord);
 
         boolean moved = false;
         if (lastSelectedPieceCoord != null && move(lastSelectedPieceCoord + coord)) {

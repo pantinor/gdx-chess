@@ -12,95 +12,95 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 
 public abstract class SimpleGame implements ApplicationListener, InputProcessor {
 
-	public ModelBatch modelBatch;
-	public ModelBatch shadowBatch;
-	public CameraInputController inputController;
-	public PerspectiveCamera cam;
-	
-	public final static int PREF_HUDWIDTH = 640;
-	public final static int PREF_HUDHEIGHT = 480;
-	protected Stage hud;
-	protected float hudWidth, hudHeight;
-	protected Skin skin;
+    public ModelBatch modelBatch;
+    public ModelBatch shadowBatch;
+    public CameraInputController inputController;
+    public PerspectiveCamera cam;
 
-	public SimpleGame() {
-	}
+    public final static int PREF_HUDWIDTH = 640;
+    public final static int PREF_HUDHEIGHT = 480;
+    protected Stage hud;
+    protected float hudWidth, hudHeight;
+    protected Skin skin;
 
-	public abstract void init();
+    public SimpleGame() {
+    }
 
-	public abstract void draw(float delta);
+    public abstract void init();
 
-	public void create() {
-		
-		cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		cam.position.set(-25, 25, 0);
-		cam.lookAt(0, 0, 0);
-		cam.near = 0.1f;
-		cam.far = 1000f;
-		cam.update();
-		
-		inputController = new CameraInputController(cam);
-		inputController.rotateLeftKey = inputController.rotateRightKey = inputController.forwardKey = inputController.backwardKey = 0;
+    public abstract void draw(float delta);
 
-		hud = new Stage();
-		hudWidth = hud.getWidth();
-		hudHeight = hud.getHeight();
-		skin = new Skin(Gdx.files.classpath("uiskin.json"));
-		
-		init();		
-		
-		Gdx.input.setInputProcessor(new InputMultiplexer(this, hud, inputController));
-	}
+    public void create() {
 
-	public void render() {
-		draw(Gdx.graphics.getDeltaTime());
-		
-		hud.draw();
-	}
+        cam = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        cam.position.set(-25, 25, 0);
+        cam.lookAt(0, 0, 0);
+        cam.near = 0.1f;
+        cam.far = 1000f;
+        cam.update();
 
-	public boolean keyDown(int keycode) {
-		return false;
-	}
+        inputController = new CameraInputController(cam);
+        inputController.rotateLeftKey = inputController.rotateRightKey = inputController.forwardKey = inputController.backwardKey = 0;
 
-	public boolean keyUp(int keycode) {
-		return false;
-	}
+        hud = new Stage();
+        hudWidth = hud.getWidth();
+        hudHeight = hud.getHeight();
+        skin = new Skin(Gdx.files.classpath("uiskin.json"));
 
-	public boolean keyTyped(char character) {
-		return false;
-	}
+        init();
 
-	public boolean touchDown(int x, int y, int pointer, int button) {
-		return false;
-	}
+        Gdx.input.setInputProcessor(new InputMultiplexer(this, hud, inputController));
+    }
 
-	public boolean touchUp(int x, int y, int pointer, int button) {
-		return false;
-	}
+    public void render() {
+        draw(Gdx.graphics.getDeltaTime());
 
-	public boolean touchDragged(int x, int y, int pointer) {
-		return false;
-	}
+        hud.draw();
+    }
 
-	public boolean mouseMoved(int screenX, int screenY) {
-		return false;
-	}
+    public boolean keyDown(int keycode) {
+        return false;
+    }
 
-	public boolean scrolled(int amount) {
-		return false;
-	}
+    public boolean keyUp(int keycode) {
+        return false;
+    }
 
-	public void pause() {
-	}
+    public boolean keyTyped(char character) {
+        return false;
+    }
 
-	public void resume() {
-	}
+    public boolean touchDown(int x, int y, int pointer, int button) {
+        return false;
+    }
 
-	public void dispose() {
-		modelBatch.dispose();
-	}
+    public boolean touchUp(int x, int y, int pointer, int button) {
+        return false;
+    }
 
-	public void resize(int width, int height) {
+    public boolean touchDragged(int x, int y, int pointer) {
+        return false;
+    }
 
-	}
+    public boolean mouseMoved(int screenX, int screenY) {
+        return false;
+    }
+
+    public boolean scrolled(int amount) {
+        return false;
+    }
+
+    public void pause() {
+    }
+
+    public void resume() {
+    }
+
+    public void dispose() {
+        modelBatch.dispose();
+    }
+
+    public void resize(int width, int height) {
+
+    }
 }

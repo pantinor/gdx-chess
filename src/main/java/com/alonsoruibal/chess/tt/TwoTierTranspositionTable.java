@@ -5,119 +5,119 @@ import com.alonsoruibal.chess.log.Logger;
 
 import java.util.Arrays;
 
-
 /**
  * Two tier Transposition table using two keys
  * <p/>
- * odd positions are conserved the greatest depth first
- * even positions are allways replaced
+ * odd positions are conserved the greatest depth first even positions are
+ * allways replaced
  * <p/>
  * Uses part of the board's zobrish key (shifted) as the index
  *
  * @author rui
  */
 public class TwoTierTranspositionTable extends TranspositionTable {
-	/**
-	 * Logger for this class
-	 */
-	private static final Logger logger = Logger.getLogger("TwoTierTranspositionTable");
 
-	public long[] keys;
-	public long[] infos;
+    /**
+     * Logger for this class
+     */
+    private static final Logger logger = Logger.getLogger("TwoTierTranspositionTable");
 
-	private int sizeBits;
-	private int index;
-	private int size;
-	private long info;
-	private byte generation;
+    public long[] keys;
+    public long[] infos;
 
-	/**
-	 * Whe must indicate the number in bits of the size
-	 * example: 23 => 2^23 are 8 million entries
-	 *
-	 * @param sizeBits
-	 */
-	public TwoTierTranspositionTable(int sizeBits) {
-		this.sizeBits = sizeBits;
-		size = 1 << sizeBits;
-		keys = new long[size];
-		infos = new long[size];
+    private int sizeBits;
+    private int index;
+    private int size;
+    private long info;
+    private byte generation;
 
-		generation = 0;
-		index = -1;
-		logger.debug("Created Two-Tier transposition table, size = " + size + " entries " + size * 16 / (1024 * 1024) + "MB");
-	}
+    /**
+     * Whe must indicate the number in bits of the size example: 23 => 2^23 are
+     * 8 million entries
+     *
+     * @param sizeBits
+     */
+    public TwoTierTranspositionTable(int sizeBits) {
+        this.sizeBits = sizeBits;
+        size = 1 << sizeBits;
+        keys = new long[size];
+        infos = new long[size];
 
-	/**
-	 * Returns true if key matches with key stored
-	 */
-	public boolean search(Board board, boolean exclusion) {
-		info = 0;
-		index = (int) ((exclusion ? board.getExclusionKey() : board.getKey()) >>> (64 - sizeBits)) & ~0x01; // Get the first odd index
-		long key2 = board.getKey2();
-		// Verifies that is really this board
-		if (keys[index] == key2 || keys[++index] == key2) { // Already returns the correct index
-			info = infos[index];
-			return true;
-		}
-		return false;
-	}
+        generation = 0;
+        index = -1;
+        logger.debug("Created Two-Tier transposition table, size = " + size + " entries " + size * 16 / (1024 * 1024) + "MB");
+    }
 
-	public int getBestMove() {
-		return (int) (info & 0x1fffff);
-	}
+    /**
+     * Returns true if key matches with key stored
+     */
+    public boolean search(Board board, boolean exclusion) {
+        info = 0;
+        index = (int) ((exclusion ? board.getExclusionKey() : board.getKey()) >>> (64 - sizeBits)) & ~0x01; // Get the first odd index
+        long key2 = board.getKey2();
+        // Verifies that is really this board
+        if (keys[index] == key2 || keys[++index] == key2) { // Already returns the correct index
+            info = infos[index];
+            return true;
+        }
+        return false;
+    }
 
-	public int getNodeType() {
-		return (int) ((info >>> 21) & 0xf);
-	}
+    public int getBestMove() {
+        return (int) (info & 0x1fffff);
+    }
 
-	public byte getGeneration() {
-		return (byte) ((info >>> 32) & 0xff);
-	}
+    public int getNodeType() {
+        return (int) ((info >>> 21) & 0xf);
+    }
 
-	public byte getDepthAnalyzed() {
-		return (byte) ((info >>> 40) & 0xff);
-	}
+    public byte getGeneration() {
+        return (byte) ((info >>> 32) & 0xff);
+    }
 
-	public int getScore() {
-		return (short) ((info >>> 48) & 0xffff);
-	}
+    public byte getDepthAnalyzed() {
+        return (byte) ((info >>> 40) & 0xff);
+    }
 
-	public void set(Board board, int nodeType, int bestMove, int score, byte depthAnalyzed, boolean exclusion) {
-		long key2 = board.getKey2();
-		index = (int) ((exclusion ? board.getExclusionKey() : board.getKey()) >>> (64 - sizeBits)) & ~0x01; // Get the first odd index
+    public int getScore() {
+        return (short) ((info >>> 48) & 0xffff);
+    }
 
-		info = infos[index];
-		if (keys[index] == 0 ||
-				getDepthAnalyzed() <= depthAnalyzed ||
-				getGeneration() != generation) {
-			// Replace odd entry
-		} else {
-			// Replace even entry
-			index++;
-		}
+    public void set(Board board, int nodeType, int bestMove, int score, byte depthAnalyzed, boolean exclusion) {
+        long key2 = board.getKey2();
+        index = (int) ((exclusion ? board.getExclusionKey() : board.getKey()) >>> (64 - sizeBits)) & ~0x01; // Get the first odd index
 
-		keys[index] = key2;
-		info = (bestMove & 0x1fffff) |
-				((nodeType & 0xf) << 21) |
-				(((long) (generation & 0xff)) << 32) |
-				(((long) (depthAnalyzed & 0xff)) << 40) |
-				(((long) (score & 0xffff)) << 48);
+        info = infos[index];
+        if (keys[index] == 0
+                || getDepthAnalyzed() <= depthAnalyzed
+                || getGeneration() != generation) {
+            // Replace odd entry
+        } else {
+            // Replace even entry
+            index++;
+        }
 
-		infos[index] = info;
-	}
+        keys[index] = key2;
+        info = (bestMove & 0x1fffff)
+                | ((nodeType & 0xf) << 21)
+                | (((long) (generation & 0xff)) << 32)
+                | (((long) (depthAnalyzed & 0xff)) << 40)
+                | (((long) (score & 0xffff)) << 48);
 
-	// called at the start of each search
-	public void newGeneration() {
-		generation++;
-	}
+        infos[index] = info;
+    }
 
-	@Override
-	public boolean isMyGeneration() {
-		return getGeneration() == generation;
-	}
+    // called at the start of each search
+    public void newGeneration() {
+        generation++;
+    }
 
-	public void clear() {
-		Arrays.fill(keys, 0);
-	}
+    @Override
+    public boolean isMyGeneration() {
+        return getGeneration() == generation;
+    }
+
+    public void clear() {
+        Arrays.fill(keys, 0);
+    }
 }

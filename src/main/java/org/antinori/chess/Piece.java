@@ -7,87 +7,85 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.math.Vector3;
 
 public class Piece {
-		
-	private PieceType type;
-	private Player player;
-	private ModelInstance instance;
-	private Model model;
-	private Vector3 pos;
-	private boolean placed = false;
 
-	public Piece(PieceType t, Player w, Model model, Vector3 pos) {
-		this.player = w;
-		this.model = model;
-		this.type = t;
-		this.instance = new ModelInstance(model);
-		
-		if (w == Player.BLACK) {
-			//this.instance.materials.get(0).set(TextureAttribute.createDiffuse(Board.darkTexture));
-			this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.DARK_GRAY));
-		} else {
-			//this.instance.materials.get(0).set(TextureAttribute.createDiffuse(Board.lightTexture));
-			this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.LIGHT_GRAY));
-		}
-		
-		setPos(pos);
-		
-		this.instance.calculateTransforms();
-	}
+    private PieceType type;
+    private Player player;
+    private ModelInstance instance;
+    private Model model;
+    private Vector3 pos;
+    private boolean placed = false;
 
-	@Override
-	public String toString() {
-		return String.format("%s %s %s", type, player, placed);
-	}
+    public Piece(PieceType t, Player w, Model model, Vector3 pos) {
+        this.player = w;
+        this.model = model;
+        this.type = t;
+        this.instance = new ModelInstance(model);
 
-	public PieceType getType() {
-		return type;
-	}
+        if (w == Player.BLACK) {
+            //this.instance.materials.get(0).set(TextureAttribute.createDiffuse(Board.darkTexture));
+            this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.DARK_GRAY));
+        } else {
+            //this.instance.materials.get(0).set(TextureAttribute.createDiffuse(Board.lightTexture));
+            this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.LIGHT_GRAY));
+        }
 
-	public Player getPlayer() {
-		return player;
-	}
+        setPos(pos);
 
-	public ModelInstance getInstance() {
-		return instance;
-	}
+        this.instance.calculateTransforms();
+    }
 
-	public Model getModel() {
-		return model;
-	}
+    @Override
+    public String toString() {
+        return String.format("%s %s %s", type, player, placed);
+    }
 
-	public Vector3 getPos() {
-		return pos;
-	}
+    public PieceType getType() {
+        return type;
+    }
 
-	public void setType(PieceType type) {
-		this.type = type;
-	}
+    public Player getPlayer() {
+        return player;
+    }
 
-	public void setPlayer(Player player) {
-		this.player = player;
-	}
+    public ModelInstance getInstance() {
+        return instance;
+    }
 
-	public void setInstance(ModelInstance instance) {
-		this.instance = instance;
-	}
+    public Model getModel() {
+        return model;
+    }
 
-	public void setModel(Model model) {
-		this.model = model;
-	}
+    public Vector3 getPos() {
+        return pos;
+    }
 
-	public void setPos(Vector3 pos) {
-		this.pos = new Vector3(pos.x, Board.MODEL_HEIGHT, pos.z);
-		this.instance.transform.setToTranslation(this.pos);
-	}
+    public void setType(PieceType type) {
+        this.type = type;
+    }
 
-	public boolean isPlaced() {
-		return placed;
-	}
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
 
-	public void setPlaced(boolean placed) {
-		this.placed = placed;
-	}
-	
-	
+    public void setInstance(ModelInstance instance) {
+        this.instance = instance;
+    }
+
+    public void setModel(Model model) {
+        this.model = model;
+    }
+
+    public void setPos(Vector3 pos) {
+        this.pos = new Vector3(pos.x, Board.MODEL_HEIGHT, pos.z);
+        this.instance.transform.setToTranslation(this.pos);
+    }
+
+    public boolean isPlaced() {
+        return placed;
+    }
+
+    public void setPlaced(boolean placed) {
+        this.placed = placed;
+    }
 
 }

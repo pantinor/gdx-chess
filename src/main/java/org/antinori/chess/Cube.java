@@ -13,141 +13,136 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class Cube {
-	
-	private Model model;
-	private ModelInstance instance;
-	private BoundingBox boundingBox;
-	private Vector3 pos;
-	private String coord;
-	private Color color; 
-	//for debugging
-	private ModelInstance outline;
 
-	public Cube(ModelBuilder modelBuilder, Color color, Vector3 pos, String coord) {
-		
-		this.coord = coord;
-		this.pos = pos;
-		this.color = color;
-		
-		model = modelBuilder.createBox(5f, 5f, 5f, new Material(ColorAttribute.createDiffuse(color)), Usage.Position | Usage.Normal);
-		instance = new ModelInstance(model, pos);
-		
-		float h = 2.5f;
-		Vector3[] vertices = new Vector3[4];
-		vertices[0] = new Vector3(pos.x-2.5f,h,pos.z-2.5f);
-		vertices[1] = new Vector3(pos.x-2.5f,h,pos.z+2.5f);
-		vertices[2] = new Vector3(pos.x+2.5f,h,pos.z+2.5f);
-		vertices[3] = new Vector3(pos.x+2.5f,h,pos.z-2.5f);
-		
-		boundingBox = new BoundingBox();
-		boundingBox.set(vertices);
-				
+    private Model model;
+    private ModelInstance instance;
+    private BoundingBox boundingBox;
+    private Vector3 pos;
+    private String coord;
+    private Color color;
+    //for debugging
+    private ModelInstance outline;
+
+    public Cube(ModelBuilder modelBuilder, Color color, Vector3 pos, String coord) {
+
+        this.coord = coord;
+        this.pos = pos;
+        this.color = color;
+
+        model = modelBuilder.createBox(5f, 5f, 5f, new Material(ColorAttribute.createDiffuse(color)), Usage.Position | Usage.Normal);
+        instance = new ModelInstance(model, pos);
+
+        float h = 2.5f;
+        Vector3[] vertices = new Vector3[4];
+        vertices[0] = new Vector3(pos.x - 2.5f, h, pos.z - 2.5f);
+        vertices[1] = new Vector3(pos.x - 2.5f, h, pos.z + 2.5f);
+        vertices[2] = new Vector3(pos.x + 2.5f, h, pos.z + 2.5f);
+        vertices[3] = new Vector3(pos.x + 2.5f, h, pos.z - 2.5f);
+
+        boundingBox = new BoundingBox();
+        boundingBox.set(vertices);
+
 		//outline = createBoxOutline(vertices);
-		
-	}
-	
+    }
 
-    
-	private ModelInstance createBoxOutline(Vector3[] v) {
+    private ModelInstance createBoxOutline(Vector3[] v) {
 
-		Model model = null;
+        Model model = null;
 
-		ModelBuilder modelBuilder = new ModelBuilder();
-		modelBuilder.begin();
-		
-		MeshPartBuilder builder = modelBuilder.part("box", GL30.GL_LINES, Usage.Position | Usage.ColorUnpacked, new Material());
-		
-		builder.setColor(Color.PINK);
-		
-		float y = v[0].y;
-		
-		builder.line(v[0].x,y,v[0].z,v[1].x,y,v[1].z);
-		builder.line(v[1].x,y,v[1].z,v[2].x,y,v[2].z);
-		builder.line(v[2].x,y,v[2].z,v[3].x,y,v[3].z);
-		builder.line(v[3].x,y,v[3].z,v[0].x,y,v[0].z);
+        ModelBuilder modelBuilder = new ModelBuilder();
+        modelBuilder.begin();
 
-		model = modelBuilder.end();
-		return new ModelInstance(model);
-	}
+        MeshPartBuilder builder = modelBuilder.part("box", GL30.GL_LINES, Usage.Position | Usage.ColorUnpacked, new Material());
 
-	
-	public String getCoordinate() {
-		return coord;
-	}
+        builder.setColor(Color.PINK);
 
-	public Model getModel() {
-		return model;
-	}
+        float y = v[0].y;
 
-	public ModelInstance getInstance() {
-		return instance;
-	}
+        builder.line(v[0].x, y, v[0].z, v[1].x, y, v[1].z);
+        builder.line(v[1].x, y, v[1].z, v[2].x, y, v[2].z);
+        builder.line(v[2].x, y, v[2].z, v[3].x, y, v[3].z);
+        builder.line(v[3].x, y, v[3].z, v[0].x, y, v[0].z);
 
-	public Vector3 getPos() {
-		return pos;
-	}
+        model = modelBuilder.end();
+        return new ModelInstance(model);
+    }
 
-	public void setModel(Model model) {
-		this.model = model;
-	}
+    public String getCoordinate() {
+        return coord;
+    }
 
-	public void setInstance(ModelInstance instance) {
-		this.instance = instance;
-	}
+    public Model getModel() {
+        return model;
+    }
 
-	public void setPos(Vector3 pos) {
-		this.pos = pos;
-	}
-	
-	public BoundingBox getBoundingBox() {
-		return boundingBox;
-	}
+    public ModelInstance getInstance() {
+        return instance;
+    }
 
-	public Color getColor() {
-		return color;
-	}
+    public Vector3 getPos() {
+        return pos;
+    }
 
-	public ModelInstance getOutline() {
-		return outline;
-	}
+    public void setModel(Model model) {
+        this.model = model;
+    }
 
-	public void setBoundingBox(BoundingBox boundingBox) {
-		this.boundingBox = boundingBox;
-	}
+    public void setInstance(ModelInstance instance) {
+        this.instance = instance;
+    }
 
-	public void setColor(Color color) {
-		this.color = color;
-	}
+    public void setPos(Vector3 pos) {
+        this.pos = pos;
+    }
 
-	public void setOutline(ModelInstance outline) {
-		this.outline = outline;
-	}
+    public BoundingBox getBoundingBox() {
+        return boundingBox;
+    }
 
+    public Color getColor() {
+        return color;
+    }
 
-	public void resetColor() {
-		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));		
-	}
-	
-	public void highlight() {
-		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.RED));
-	}
-	
-	public void changeColor(Color color) {
-		this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));
-	}
-	
-	
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof Cube)) 
-			return false;
-		
-		Cube tmp = (Cube)obj;
-		if (tmp.coord == this.coord) 
-			return true;
-		
-		return false;
-	}
+    public ModelInstance getOutline() {
+        return outline;
+    }
 
+    public void setBoundingBox(BoundingBox boundingBox) {
+        this.boundingBox = boundingBox;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public void setOutline(ModelInstance outline) {
+        this.outline = outline;
+    }
+
+    public void resetColor() {
+        this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));
+    }
+
+    public void highlight() {
+        this.instance.materials.get(0).set(ColorAttribute.createDiffuse(Color.RED));
+    }
+
+    public void changeColor(Color color) {
+        this.instance.materials.get(0).set(ColorAttribute.createDiffuse(color));
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Cube)) {
+            return false;
+        }
+
+        Cube tmp = (Cube) obj;
+        if (tmp.coord == this.coord) {
+            return true;
+        }
+
+        return false;
+    }
 
 }
